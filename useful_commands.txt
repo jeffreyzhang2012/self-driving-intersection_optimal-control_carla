@@ -1,0 +1,22 @@
+export CARLA_ROOT=/opt/carla-simulator
+export SCENARIO_RUNNER_ROOT=home/jezmond/Insync/jefzhangxy@hotmail.com/OneDrive/grad/Optimal_Control/Project/scenario_runner-master
+export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/dist/carla-0.9.11-py3.7-linux-x86_64.egg
+export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla/agents
+export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla
+export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI
+
+export PYTHONPATH=$PYTHONPATH:/opt/carla-simulator/PythonAPI/carla/agents
+
+
+./CarlaUE4.sh -quality-level=Low
+
+
+https://github.com/carla-simulator/carla/issues/1466
+python scenario_runner.py --scenario FollowLeadingVehicle_1 --reloadWorld
+
+grep -l 'configuration for scenario' scenario_runner-master/**/**.*
+
+import os
+
+# printing environment variables
+print(os.environ)
