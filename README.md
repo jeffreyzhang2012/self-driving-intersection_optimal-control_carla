@@ -13,7 +13,7 @@ In your carla installation folder run
 # or 
 ./CarlaUE4.sh -opengl
 ```
-In this project's directory, run
+In a different terminal, in this project's directory, run
 ```
 python project_main.py
 ```
