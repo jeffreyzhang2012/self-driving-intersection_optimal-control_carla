@@ -18,9 +18,14 @@ from carEnv import *
 
 def main():
     env = carEnv();
+    # os.system('python manual_control_custom.py -z 1')
     try:
         while True:
-            pass
+            while not env.c2.arrived_goal:
+                env.c2.step()
+            for actor in env.actor_list:
+                actor.destroy()
+            env.reset()
     except KeyboardInterrupt:
         for actor in env.actor_list:
             actor.destroy()
