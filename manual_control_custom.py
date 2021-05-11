@@ -172,7 +172,9 @@ class World(object):
             print('  Make sure it exists, has the same name of your town, and is correct.')
             sys.exit(1)
         self.hud = hud
-        self.player = None
+        self.player = self.world.get_actors().filter('vehicle.*')[args.agent]
+        # self.player = None
+        # print(self.player)
         self.collision_sensor = None
         self.lane_invasion_sensor = None
         self.gnss_sensor = None
@@ -227,24 +229,25 @@ class World(object):
         else:
             print("No recommended values for 'speed' attribute")
         # Spawn the player.
-        if self.player is not None:
-            spawn_point = self.player.get_transform()
-            spawn_point.location.z += 2.0
-            spawn_point.rotation.roll = 0.0
-            spawn_point.rotation.pitch = 0.0
-            self.destroy()
-            self.player = self.world.try_spawn_actor(blueprint, spawn_point)
-            self.modify_vehicle_physics(self.player)
-        while self.player is None:
-            if not self.map.get_spawn_points():
-                print('There are no spawn points available in your map/town.')
-                print('Please add some Vehicle Spawn Point to your UE4 scene.')
-                sys.exit(1)
-            spawn_points = self.map.get_spawn_points()
-            spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
-            self.player = self.world.try_spawn_actor(blueprint, spawn_point)
-            self.modify_vehicle_physics(self.player)
+        # if self.player is not None:
+        #     spawn_point = self.player.get_transform()
+        #     spawn_point.location.z += 2.0
+        #     spawn_point.rotation.roll = 0.0
+        #     spawn_point.rotation.pitch = 0.0
+        #     self.destroy()
+        #     self.player = self.world.try_spawn_actor(blueprint, spawn_point)
+        #     self.modify_vehicle_physics(self.player)
+        # while self.player is None:
+        #     if not self.map.get_spawn_points():
+        #         print('There are no spawn points available in your map/town.')
+        #         print('Please add some Vehicle Spawn Point to your UE4 scene.')
+        #         sys.exit(1)
+        #     spawn_points = self.map.get_spawn_points()
+        #     spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
+        #     self.player = self.world.try_spawn_actor(blueprint, spawn_point)
+        #     self.modify_vehicle_physics(self.player)
         # Set up the sensors.
+        # print(self.player)
         self.collision_sensor = CollisionSensor(self.player, self.hud)
         self.lane_invasion_sensor = LaneInvasionSensor(self.player, self.hud)
         self.gnss_sensor = GnssSensor(self.player)
@@ -1144,6 +1147,12 @@ def main():
         action='store_true',
         help='enable autopilot')
     argparser.add_argument(
+        '-z', '--agent',
+        default=0,
+        type=int,
+        # action='store_true',
+        help='agent number')
+    argparser.add_argument(
         '--res',
         metavar='WIDTHxHEIGHT',
         default='1280x720',
@@ -1164,7 +1173,6 @@ def main():
         type=float,
         help='Gamma correction of the camera (default: 2.2)')
     args = argparser.parse_args()
-    print(args)
 
     args.width, args.height = [int(x) for x in args.res.split('x')]
 
