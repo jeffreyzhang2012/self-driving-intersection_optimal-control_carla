@@ -14,9 +14,13 @@ export PYTHONPATH=$PYTHONPATH:/opt/carla-simulator/PythonAPI/carla/agents
 https://github.com/carla-simulator/carla/issues/1466
 python scenario_runner.py --scenario FollowLeadingVehicle_1 --reloadWorld
 
-grep -l 'configuration for scenario' scenario_runner-master/**/**.*
+grep -l -R 'configuration for scenario' scenario_runner-master/**/**.*
 
 import os
 
 # printing environment variables
 print(os.environ)
+
+xdg-open
+
+pkill -9 python

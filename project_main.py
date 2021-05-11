@@ -1,6 +1,7 @@
 import glob
 import os
 import sys
+from sys import exit
 
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
@@ -13,12 +14,17 @@ except IndexError:
 import carla
 import random
 import time
-from load import *
+from carEnv import *
 
 def main():
-    client = carla.Client('localhost', 2000)
-    world = load_map(client)
-    load_vehicle(world)
+    env = carEnv();
+    try:
+        while True:
+            pass
+    except KeyboardInterrupt:
+        for actor in env.actor_list:
+            actor.destroy()
+        exit()
 
 if __name__ == '__main__':
     main()
