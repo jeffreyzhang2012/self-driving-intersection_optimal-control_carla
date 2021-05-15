@@ -51,5 +51,7 @@ class carEnv:
         self.v2 = self.world.spawn_actor(self.bp_v2, self.v2_init_loc)
         self.actor_list.append(self.v1)
         self.actor_list.append(self.v2)
+
+    def init_Controller(self):
         self.c1 = V1Controller(self.v1)
         self.c2 = CurveFollowController(self.v2)
