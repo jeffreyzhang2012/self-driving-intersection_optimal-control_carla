@@ -10,6 +10,9 @@ export PYTHONPATH=$PYTHONPATH:/opt/carla-simulator/PythonAPI/carla/agents
 
 ./CarlaUE4.sh -quality-level=Low
 
+or
+./CarlaUE4.sh -opengl
+
 
 https://github.com/carla-simulator/carla/issues/1466
 python scenario_runner.py --scenario FollowLeadingVehicle_1 --reloadWorld
