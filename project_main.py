@@ -33,6 +33,7 @@ def main():
             break;
             # env.reset()
         traj = env.c2.get_traj()
+        np.savetxt('vehicle2_traj',traj,delimiter=',')
         P, (ax1, ax2, ax3) = plt.subplots(3, 1)
         ax1.plot(traj[0,:].T,'r');ax1.set_title('x')
         ax2.plot(traj[1,:].T,'g');ax2.set_title('y')

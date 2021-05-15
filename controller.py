@@ -52,7 +52,8 @@ class Controller:
 
     def get_traj(self):
         ## return init-zeroed trajectory
-        return (self.X_hist[:,:self.data_tick].T-self.X_init[:,np.newaxis].T).T
+
+        return (self.X_hist[:,:self.data_tick][:,::100].T-self.X_init[:,np.newaxis].T).T
 
 class V1Controller(Controller):
     def __init__(self,vehicle):
