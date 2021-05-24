@@ -31,10 +31,9 @@ def intersection(s, u):
 
 
 def scp_formpc(f, Q, R, Q_N, s_star, s0, N, dt, rho, UB, LB, aUB, vUB, omegaUB, case, agent, hist):
-    # Outer loop of scp.
-
-    n = 5  # state dimension
-    m = 2  # control dimension
+    """Outer loop of scp"""
+    n = 5  # state dimension, s = [x, y, theta, linear vel, angular vel]
+    m = 2  # control dimension, u = [linear acc, angular acc]
     eps = 0.01  # termination threshold for scp
 
     # initialize reference rollout s_bar,u_bar
@@ -52,9 +51,8 @@ def scp_formpc(f, Q, R, Q_N, s_star, s0, N, dt, rho, UB, LB, aUB, vUB, omegaUB, 
     round = 0
     err = 0
     err = max(err, np.linalg.norm(u - u_bar, np.inf))
+    # terminate if (1) converge, or (2) reaches maximum iteration
     while err > eps and round < 15:
-        # print("round: %s, u update: %s" % (round, err))
-        # print("u=", u_bar, "y=", s_bar[:, 1])
         round = round + 1
         s_bar = s
         u_bar = u
@@ -68,9 +66,7 @@ def scp_formpc(f, Q, R, Q_N, s_star, s0, N, dt, rho, UB, LB, aUB, vUB, omegaUB, 
 
 def scp_iteration_formpc(f, Q, R, Q_N, s_bar, u_bar, s_star, s0, N, dt, rho, UB, LB, aUB, vUB, omegaUB, case, agent,
                          hist):
-    ###########################################################################
-    # implement one iteration of scp
-
+    """implement one iteration of scp"""
     for a in range(agent):
         s = cvx.Variable(s_bar.shape)
         u = cvx.Variable(u_bar.shape)
@@ -98,13 +94,16 @@ def scp_iteration_formpc(f, Q, R, Q_N, s_bar, u_bar, s_star, s0, N, dt, rho, UB,
         s = s.value
         u = u.value
 
-    ###########################################################################
     return s, u
 
 
-def mpc():
-    # import trajectory of agent 2
-    file = open('vehicle2_traj.txt', 'r')
+def get_hist(filename):
+    """
+    Import trajectory for the ego agent to follow
+    Output: np.array in shape (len x n), where len is how many time steps the trajectory has,
+            and n is dimension of state variable (n=5 now)
+    """
+    file = open(filename, 'r')
     x_hist = []
     y_hist = []
     theta_hist = []
@@ -124,8 +123,15 @@ def mpc():
         x_hist.append(float(x_data[i]))
         y_hist.append(float(y_data[i]))
         theta_hist.append(float(theta_data[i]) / 180 * np.pi)
+    # hist is now [[x], [y], [theta]]
     hist = np.vstack((np.array(x_hist), np.array(y_hist), np.array(theta_hist))).T
-    hist = np.hstack((hist, np.zeros((len(hist), 1)), np.zeros((len(hist), 1))))
+    # append two columns of zeros to match n=5
+    hist = np.hstack((hist, np.zeros((len(hist), 2))))
+    return hist
+
+
+def mpc(filename='vehicle2_traj.txt'):
+    hist = get_hist(filename)
 
     # simulation parameters
     n = 5
@@ -145,12 +151,13 @@ def mpc():
     f_discrete = jax.jit(lambda s, u, dt=dt: s + dt * f(s, u))
 
     # scp parameters
-    UB, LB = 1., -1.
-    aUB = 20.  # 1.
-    vUB = 20  # 1.589
-    omegaUB = np.pi  # np.pi/20 # ???
-    rho = 1
-    case = np.array(['straightright', 'upright'])  # np.array(['straight', 'upleft'])# 'straight' # 'right'
+    # TODO constraints need to match CARLA dynamics??
+    UB, LB = None, None  # variables labeled as None are rebundant and will be removed later
+    aUB = 20.  # acceleration upper bound
+    vUB = 20.  # velocity upper bound
+    omegaUB = np.pi  # angular acceleration upper bound
+    rho = None  # trust region constraint, currently not used to guarantee solvability
+    case = None
 
     t = np.arange(0., T, dt)
     N = t.size - 1
@@ -158,7 +165,8 @@ def mpc():
     traj_2[0, :] = np.array([hist[0, 0], hist[0, 1], hist[0, 2], 0, 0])
     control_2 = np.zeros((N, m))
 
-    kh = 1
+    '''MPC Process: In total time step length N, perform SCP iteration with some time steps (e.g. 30)'''
+    kh = 5  # counter that specifies which state in given trajectory the agent should target at
     for mpc_t in range(N):
         if mpc_t == 0:
             start_state = np.array([hist[0, 0], hist[0, 1], hist[0, 2], 0, 0])
@@ -168,29 +176,20 @@ def mpc():
                 kh += 1
             else:
                 kh = -1
-        # kh = -1
+        # setting the goal state according to specified reference trajectory
         goal_state = np.array([hist[kh, 0], hist[kh, 1], hist[kh, 2], 0, 0])
-        # goal_state = np.array([hist[0, 0], hist[0, 1] + 10, hist[0, 2], 0, 0])
-        print('start:', start_state)
-        print('goal:', goal_state)
         # solve with scp
-        # print('Computing SCP solution ... ', end='')
         s_mpc, u_mpc = scp_formpc(f_discrete, Q, R, Qf, goal_state, start_state, 30, dt, rho, UB, LB, aUB, vUB, omegaUB,
                                   case, agent, hist)
-        '''
+        '''# if too close to vehicle 1, move the goal state backward so that ideally the vehicle should slow down
         if np.linalg.norm(s_mpc[-1, 0:2] - traj_1[mpc_t, 0:2]) <= 1:
             # print('conflict')
             kh -= 2
             mpc_t -= 1
             continue
             '''
+        # Apply the first control input only.
+        # Could use more than the first one, just need to change the goal state and steps in the scp solver.
         control_2[mpc_t] = u_mpc[0]
-        # print('u=', u_mpc)
-        # print('s=', s_mpc)
         traj_2[mpc_t + 1] = f_discrete(traj_2[mpc_t], control_2[mpc_t])
-        print('traj_2:\n', traj_2[mpc_t + 1])
-        print('-----------------step done!')
-        # print(len(hist))
         # break
-
-    print('done!')
