@@ -24,6 +24,7 @@ def main():
     # os.system('python manual_control_custom.py -z 1')
     time.sleep(2);
     env.init_Controller()
+    env.c1.apply(0.5,0.5)
     try:
         while True:
             while not env.c2.arrived_goal:
@@ -32,7 +33,7 @@ def main():
                 actor.destroy()
             break;
             # env.reset()
-        traj = env.c2.get_traj()
+        traj = env.c2.get_hist()
         np.savetxt('vehicle2_traj.txt',traj,delimiter=',')
         P, (ax1, ax2, ax3) = plt.subplots(3, 1)
         ax1.plot(traj[0,:].T,'r');ax1.set_title('x')

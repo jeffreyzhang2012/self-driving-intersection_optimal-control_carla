@@ -29,6 +29,10 @@ class Controller:
         self.X_init = np.zeros(3)
         self.arrived_goal = False
         self.init_state()
+        self.mode = 0 # 0 == default, 1==follow traj
+        self.traj = None
+        self.traj_dt = None
+        self.init_PID()
 
     def init_state(self):
         T = self.vehicle.get_transform()
@@ -50,14 +54,34 @@ class Controller:
         self.arrived_goal = np.linalg.norm(self.X_hist[:2,self.data_tick] - self.goal) < 2.0
         # p = np.linalg.norm(self.X[:2] - self.goal)
 
-    def get_traj(self):
-        ## return init-zeroed trajectory
+    def set_traj(self,traj,time_for_completion):
+        self.traj = traj
+        self.traj_dt = time_for_completion/(traj.shape[1])
+        self.mode = 1 #follow traj
 
+    def get_traj_inputs(self):
+
+
+    def get_hist(self):
+        ## return init-zeroed trajectory
         return (self.X_hist[:,:self.data_tick][:,::100].T-self.X_init[:,np.newaxis].T).T
+
+    def step(self):
+        self.update_state()
+        if self.mode == 1:
+            throttle,steer = self.get_traj_inputs()
+        else:
+            throttle,steer = self.get_default_inputs()
+        self.apply(throttle,steer)
+        self.data_tick += 1
 
 class V1Controller(Controller):
     def __init__(self,vehicle):
+        self.PID = PID([0,0,0])
         super().__init__(vehicle)
+
+    def get_default_inputs(self):
+        return 0.0, 0.0
 
 class CurveFollowController(Controller):
     def __init__(self,vehicle):
@@ -66,17 +90,10 @@ class CurveFollowController(Controller):
         p2 = self.goal
         self.o = np.array([p2[0],p1[1]])
         self.r_d = (abs(p1[0]-p2[0])+abs(p1[1]-p2[1]))/2
+        self.PID = PID([0,0,0])
         super().__init__(vehicle)
 
-    def calculate_steer(self):
+    def get_default_inputs(self):
         r = np.linalg.norm(self.o-self.X_hist[:2,self.data_tick])
         steer = (self.r_d-r)/(self.r_d*0.25)
-        return steer
-
-    def calculate_throttle(self):
-        return 0.5
-
-    def step(self):
-        super().update_state()
-        super().apply(self.calculate_throttle(),self.calculate_steer())
-        self.data_tick += 1
+        return 0.5,steer
