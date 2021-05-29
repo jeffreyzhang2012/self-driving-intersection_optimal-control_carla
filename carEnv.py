@@ -54,4 +54,5 @@ class carEnv:
 
     def init_Controller(self):
         self.c1 = V1Controller(self.v1)
-        self.c2 = CurveFollowController(self.v2)
+        # self.c2 = CurveFollowController(self.v2)
+        self.c2 = vwController(self.v2)
