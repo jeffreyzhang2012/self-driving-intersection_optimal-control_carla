@@ -92,8 +92,10 @@ def scp_iteration_formpc(f, Q, R, Q_N, s_bar, u_bar, s_star, s0, N, dt, rho, UB,
         cost_terms.append(cvx.quad_form(s[N, 0:3] - s_star[0:3], Q_N))
         # if np.linalg.norm(hist - s_bar[N, :2]) > 0:
         if (s_bar[N, :2]).all != 0:
-            unit_vec = (hist - s_bar[N, :2]) / np.linalg.norm(hist - s_bar[N, :2])
-            constraints.append(cvx.sum(unit_vec @ (hist - s[N, :2])) >= 8)
+            unit_vec = (hist + np.array([0, 3.]) - s_bar[N, :2]) / np.linalg.norm(
+                hist + np.array([0, 3.]) - s_bar[N, :2])
+            constraints.append(cvx.sum(unit_vec @ (hist + np.array([0, 3.]) - s[N, :2])) >= 8)
+            cost_terms.append(1000 - cvx.sum(unit_vec @ (hist + np.array([0, 3.]) - s[N, :2])))
         # if np.linalg.norm(hist - s_bar[N, :2]) > 0:
         #     print('unit_vec=', unit_vec @ (hist - s[N, :2]))
         # cost_terms.append(10 - cvx.norm(s[N, 0:2] - hist[0:2]))
@@ -164,7 +166,6 @@ def mpc(hist=None, traj_1=None, traj_2=None, tick=None, goal=None):
     f_discrete = jax.jit(lambda s, u, dt=dt: s + dt * f(s, u))
 
     # scp parameters
-    # TODO constraints need to match CARLA dynamics??
     UB, LB = None, None  # variables labeled as None are rebundant and will be removed later
     aUB = .3  # acceleration upper bound
     vUB = 5.  # velocity upper bound
@@ -207,8 +208,9 @@ def mpc(hist=None, traj_1=None, traj_2=None, tick=None, goal=None):
         else:
             u2 = 0.
         '''
+        s_mpc = np.array([[0., 0., 0.]])
         u_mpc = np.array([[-2., 0.]])
     print(np.linalg.norm(start_state[:2] - traj_1[:2]))
-    return [u_mpc[0, 0], u_mpc[0, 1]]
+    return [s_mpc[0, 0], s_mpc[0, 1], s_mpc[0, 2]], [u_mpc[0, 0], u_mpc[0, 1]]
 
     # break
