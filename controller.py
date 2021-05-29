@@ -75,7 +75,6 @@ class Controller:
 
     def set_follower_traj(self,traj,time_for_completion):
         self.traj = traj # could be (v,w) or (x,y)
-        print(traj.shape)
         self.traj_dt = time_for_completion/(traj.shape[0])
         self.mode = 1 #follow trajectory
         self.prev_idx = -1
@@ -88,7 +87,6 @@ class Controller:
 
     def get_input(self):
         idx = int((time.time() - self.traj_start_time)//self.traj_dt)
-        # print(idx)
         if idx != self.prev_idx:
             try:
                 goal = self.traj[idx]
@@ -137,10 +135,10 @@ class vwController(Controller):
         N = 1000
         T = 10
         t = np.linspace(0,T,N)
-        theta = np.sin(t*2)
+        theta = np.cos(t*2)
         traj = np.zeros((N,2))
         traj[:,0] = np.sin(t*2)*5
-        traj[:,1] = theta*0.1
+        traj[:,1] = theta*0.2
         # traj[:,2] = np.zeros(N)
         super().__init__(vehicle)
         self.set_follower_traj(traj,T)
