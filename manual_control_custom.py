@@ -78,9 +78,7 @@ except IndexError:
 
 
 import carla
-
 from carla import ColorConverter as cc
-
 import argparse
 import collections
 import datetime
