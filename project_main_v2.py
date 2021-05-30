@@ -29,13 +29,14 @@ def main():
         while True:
             while not env.c2.arrived_goal:
                 if env.c2.data_tick == 0:
-                    env.c2.vw_step('constant', None)
+                    pass
+                    # env.c2.vw_step('constant', None)
                 else:
                     traj_1 = env.c1.X_hist[:2, max(env.c1.data_tick-1, 0)]
                     traj_1 = np.array([traj_1[1], traj_1[0]])
                     traj_2 = env.c2.X_hist[:, max(env.c2.data_tick-1, 0)]
                     traj_2 = np.array([traj_2[1], traj_2[0], traj_2[2] / 180 * np.pi])
-                    env.c2.vw_step(traj_1, traj_2)
+                    # env.c2.vw_step(traj_1, traj_2)
                 env.c1.simple_step(slow=False)
             for actor in env.actor_list:
                 actor.destroy()
