@@ -181,7 +181,7 @@ def mpc(hist=None, traj_1=None, traj_2=None, tick=None, goal=None):
     # setting the goal state according to specified reference trajectory
     goal_state = np.array([goal[1], goal[0], 0.])
     # solve with scp
-    print('start:', start_state, 'goal:', goal_state, 'traj_1:', traj_1)
+    # print('start:', start_state, 'goal:', goal_state, 'traj_1:', traj_1)
     s_mpc, u_mpc = scp_formpc(f_discrete, Q, R, Qf, goal_state, start_state,
                               20, dt, rho, UB, LB, aUB, vUB, omegaUB, Q_d, agent, traj_1)
     '''
@@ -210,7 +210,7 @@ def mpc(hist=None, traj_1=None, traj_2=None, tick=None, goal=None):
         '''
         s_mpc = np.array([[0., 0., 0.]])
         u_mpc = np.array([[-2., 0.]])
-    print(np.linalg.norm(start_state[:2] - traj_1[:2]))
+    # print(np.linalg.norm(start_state[:2] - traj_1[:2]))
     return [s_mpc[0, 0], s_mpc[0, 1], s_mpc[0, 2]], [u_mpc[0, 0], u_mpc[0, 1]]
 
     # break

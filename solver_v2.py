@@ -161,7 +161,7 @@ def mpc(hist, traj_1=None, traj_2=None, tick=None):
     # setting the goal state according to specified reference trajectory
     goal_state = np.array([hist[kh, 0] - 183, hist[kh, 1] + 255, hist[kh, 2]])
     # solve with scp
-    print('start:', start_state, 'goal:', goal_state)
+    # print('start:', start_state, 'goal:', goal_state)
     s_mpc, u_mpc = scp_formpc(f_discrete, Q, R, Qf, goal_state, start_state,
                               5, dt, rho, UB, LB, aUB, vUB, omegaUB,
                               case, agent, hist)
