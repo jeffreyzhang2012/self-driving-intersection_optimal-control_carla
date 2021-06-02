@@ -168,6 +168,7 @@ def mpc(hist=None, traj_11=None, traj_10=None, traj_2=None, tick=None, goal=None
     m = 2
     agent = 1
     dt = 0.1  # 0.01
+    horizon = 20  # 30
 
     # cost function
     Qf = np.diag(np.array([100, 100, 100]))  # , 0, 0])) # 1000.*np.eye(n)
@@ -208,8 +209,7 @@ def mpc(hist=None, traj_11=None, traj_10=None, traj_2=None, tick=None, goal=None
         traj_1 = traj_11
     print('start:', start_state, 'goal:', goal_state, 'traj_1:', traj_11, 'traj_target:', traj_1)
     s_mpc, u_mpc, c_mpc = scp_formpc(f_discrete, Q, R, Qf, goal_state, start_state,
-                                     20,  # 30,
-                                     dt, rho, UB, LB, aUB, vUB, omegaUB, Q_d, agent, traj_1)
+                                     horizon, dt, rho, UB, LB, aUB, vUB, omegaUB, Q_d, agent, traj_1)
     sn_mpc = s_mpc[-1, :2]
     '''
     if s_mpc is not None:
@@ -236,10 +236,13 @@ def mpc(hist=None, traj_11=None, traj_10=None, traj_2=None, tick=None, goal=None
             u2 = 0.
         '''
         s_mpc = np.array([[0., 0., 0.]])
-        u_mpc = np.array([[-2., 0.]])
+        # u_mpc = np.array([[-2., 0.]])
+        u_mpc = np.zeros((horizon, m))
         sn_mpc = np.array([0, 0])
     # print(np.linalg.norm(start_state[:2] - traj_1[:2]))
     # print(c_mpc)
-    return [s_mpc[0, 0], s_mpc[0, 1], s_mpc[0, 2]], sn_mpc, [u_mpc[0, 0], u_mpc[0, 1]], c_mpc, traj_1
+    # return [s_mpc[0, 0], s_mpc[0, 1], s_mpc[0, 2]], sn_mpc, [u_mpc[0, 0], u_mpc[0, 1]], c_mpc, traj_1
+    return [s_mpc[0, 0], s_mpc[0, 1], s_mpc[0, 2]], sn_mpc, u_mpc, c_mpc, traj_1
+
 
     # break

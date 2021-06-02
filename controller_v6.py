@@ -253,7 +253,7 @@ class vwController(Controller):
         return 0.0, 0.0
 
     def opt_step(self, traj_11, traj_10, traj_2):
-        N = 100
+        N = 20
         T = 1
         traj = np.zeros((N, 2))
         if traj_11 == 'constant':
@@ -267,12 +267,12 @@ class vwController(Controller):
             s, sn, u, c, traj_12 = mpc(hist=None, traj_11=traj_11, traj_10=traj_10,
                                        traj_2=traj_2, tick=self.data_tick, goal=self.goal)
             print(len(u),len(u[0]))
-            traj = np.zeros((u.shape[0],2))
+            # traj = np.zeros((u.shape[0],2))
             # vel = u[0] * 10
             # traj[:, 0] = np.linspace(vel, vel, N)
             # traj[:, 1] = np.linspace(u[1], u[1], N)
-            traj[:,0] = u[0]
-            traj[:,1] = u[1]
+            traj[:, 0] = u[:, 0] * 10
+            traj[:, 1] = u[:, 1]
             self.C_hist[self.data_tick] = c
             self.traj_12 = traj_12
             self.sn = sn
