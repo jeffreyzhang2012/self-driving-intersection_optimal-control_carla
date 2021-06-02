@@ -64,6 +64,7 @@ class Controller:
             self.vehicle_control.throttle = max(0, throttle)
             self.vehicle_control.brake = max(0, -throttle)
             self.vehicle_control.steer = steer
+        # print(self.vehicle_control)
         self.vehicle.apply_control(self.vehicle_control)
         return
 
@@ -139,7 +140,7 @@ class Controller:
 class V1Controller(Controller):
     def __init__(self, vehicle):
         self.path = random.randint(0,2)
-        # self.path = 1
+        self.path = 0
         self.waypoints = waypoints_all[self.path]
         self.goal = np.array([300, -169])
         self.path_len = 0
@@ -173,6 +174,7 @@ class V1Controller(Controller):
         return
 
     def calculate_throttle(self):
+        # return 1
         return self.F[0]
         # if slow:
         #     return [0, 1.]
@@ -234,14 +236,14 @@ class vwController(Controller):
         self.start = [255, -183]
         self.goal = np.array([269, -169])
         self.follower = vwFollower(vehicle)
+        self.new_traj = False
+        self.traj_buffer = None
         super().__init__(vehicle)
-        # self.set_follower_traj(traj, T)
 
     def get_default_inputs(self):
         return 0.0, 0.0
 
     def vw_step(self, traj_1, traj_2):
-        # super().update_state()
         N = 100
         T = 1
         traj = np.zeros((N, 2))
@@ -251,13 +253,8 @@ class vwController(Controller):
             traj[:, 1] = np.linspace(0, u[1], N)
         else:
             s, u = mpc(hist=None, traj_1=traj_1, traj_2=traj_2, tick=self.data_tick, goal=self.goal)
-            # print(s)
-            # vel = np.sqrt((s[0] - self.start[0]) ** 2 + (s[1] - self.start[1]) ** 2)
             vel = u[0] * 10
             traj[:, 0] = np.linspace(vel, vel, N)
             traj[:, 1] = np.linspace(u[1], u[1], N)
-        # print('u=', traj)
-        # self.data_tick += 1
         super().set_follower_traj(traj, T)
         super().step()
-        # return traj

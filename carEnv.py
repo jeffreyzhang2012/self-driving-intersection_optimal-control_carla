@@ -14,7 +14,7 @@ except IndexError:
 import carla
 import random
 import time
-from controller_v4 import *
+from controller_v6 import *
 
 class carEnv:
     SHOW_CAM = 1

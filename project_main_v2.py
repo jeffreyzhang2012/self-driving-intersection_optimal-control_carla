@@ -18,9 +18,24 @@ import carla
 import random
 import time
 from carEnv import *
+import multiprocessing
+
+env = carEnv()
+
+# def p1():
+#     while not (env.c2.arrived_goal or env.c1.arrived_goal):
+#
+#     return traj_1
+
+# def p2_opt():
+#     while not (env.c2.arrived_goal or env.c1.arrived_goal):
+#         if env.c2.data_tick == 0:
+#             env.c2.vw_step('constant', None)
+#         else:
+#     return traj_2
 
 def main():
-    env = carEnv()
+    # env = carEnv()
     # os.system('python manual_control_custom.py -z 1')
     time.sleep(2)
     env.init_Controller()
@@ -44,8 +59,8 @@ def main():
             # env.reset()
         traj = env.c2.get_hist()
         traj1 = env.c1.get_hist()
-        print(traj)
-        print(traj1)
+        # print(traj)
+        # print(traj1)
         # np.savetxt('vehicle2_traj.txt',traj,delimiter=',')
         P, (ax1, ax2, ax3) = plt.subplots(3, 1)
         ax1.plot(traj[0,:].T,'r');ax1.set_title('x')

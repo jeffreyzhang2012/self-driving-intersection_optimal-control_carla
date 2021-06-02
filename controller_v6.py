@@ -111,9 +111,7 @@ class Controller:
         return
 
     def get_hist(self):
-        ## return init-zeroed trajectory
         return (self.X_hist[:, :self.data_tick].T - self.X_init[:, np.newaxis].T).T
-        # return (self.X_hist[:, :self.data_tick][:, ::100].T - self.X_init[:, np.newaxis].T).T
 
     def get_input(self):
         idx = int((time.time() - self.traj_start_time) // self.traj_dt)
@@ -130,15 +128,12 @@ class Controller:
     def step(self):
         self.update_state()
         if self.mode == 1:
-            # throttle,steer = self.get_input_traj_step()
             throttle, steer = self.get_input()
-            self.get_input()
+            # self.get_input()
         else:
             throttle, steer = self.get_default_inputs()
-        print(throttle, steer)
         self.apply(throttle, steer)
         self.data_tick += 1
-
 
 class V1ControllerSimple(Controller):
     def __init__(self, vehicle):
@@ -165,7 +160,7 @@ class V1ControllerSimple(Controller):
 class V1Controller(Controller):
     def __init__(self, vehicle):
         self.path = random.randint(0, 2)
-        self.path = 1
+        # self.path = 1
         self.waypoints = waypoints_all[self.path]
         self.goal = np.array([300, -169])
         self.path_len = 0
@@ -209,10 +204,6 @@ class V1Controller(Controller):
         self.d += np.linalg.norm(self.X_hist[:2, self.data_tick] - self.X_hist[:2, self.data_tick - 1])
         F_global = self.xy_traj[int((self.d + 0.3) * self.point_per_len)]
         self.F = self.T.get_inverse_matrix() @ np.hstack((F_global, [0, 1]))
-        # print("Force",self.F)
-        # super().simple_apply(self.calculate_throttle(slow)[0],
-        #                      self.calculate_steer(),
-        #                      self.calculate_throttle(slow)[1])
         super().apply2(self.calculate_throttle(), self.calculate_steer())
         self.data_tick += 1
 
@@ -256,22 +247,12 @@ class vwController(Controller):
         self.start = [255, -183]
         self.goal = np.array([269, -169])
         self.follower = vwFollower(vehicle)
-        # N = 100
-        # T = 1
-        # t = np.linspace(0, T, N)
-        # theta = np.cos(t * 2)
-        # traj = np.zeros((N, 2))
-        # traj[:, 0] = np.sin(t * 2) * 5
-        # traj[:, 1] = theta * 0.2
-        # traj[:,2] = np.zeros(N)
         super().__init__(vehicle)
-        # self.set_follower_traj(traj, T)
 
     def get_default_inputs(self):
         return 0.0, 0.0
 
-    def vw_step(self, traj_11, traj_10, traj_2):
-        # super().update_state()
+    def opt_step(self, traj_11, traj_10, traj_2):
         N = 100
         T = 1
         traj = np.zeros((N, 2))
@@ -285,16 +266,16 @@ class vwController(Controller):
         else:
             s, sn, u, c, traj_12 = mpc(hist=None, traj_11=traj_11, traj_10=traj_10,
                                        traj_2=traj_2, tick=self.data_tick, goal=self.goal)
-            # print(s)
-            # vel = np.sqrt((s[0] - self.start[0]) ** 2 + (s[1] - self.start[1]) ** 2)
-            vel = u[0] * 10
-            traj[:, 0] = np.linspace(vel, vel, N)
-            traj[:, 1] = np.linspace(u[1], u[1], N)
+            print(len(u),len(u[0]))
+            traj = np.zeros((u.shape[0],2))
+            # vel = u[0] * 10
+            # traj[:, 0] = np.linspace(vel, vel, N)
+            # traj[:, 1] = np.linspace(u[1], u[1], N)
+            traj[:,0] = u[0]
+            traj[:,1] = u[1]
             self.C_hist[self.data_tick] = c
             self.traj_12 = traj_12
             self.sn = sn
-        # print('u=', traj)
-        # self.data_tick += 1
         super().set_follower_traj(traj, T)
-        super().step()
+        # super().step()
         # return traj
