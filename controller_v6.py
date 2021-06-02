@@ -119,6 +119,7 @@ class Controller:
             try:
                 goal = self.traj[idx]
                 self.follower.new_goal(goal)
+                # self.prev_throttle =
             except:
                 self.mode = 0
                 return self.get_default_inputs()
@@ -196,7 +197,8 @@ class V1Controller(Controller):
         return
 
     def calculate_throttle(self):
-        return self.F[0]
+        # return self.F[0]
+        return 0
 
     def calculate_steer(self):
         return np.arctan2(self.F[1], self.F[0])
@@ -251,35 +253,47 @@ class vwController(Controller):
         self.follower = vwFollower(vehicle)
         self.prev_throttle = 0
         self.prev_steer = 0
+        self.pre_solve_time = 0
         super().__init__(vehicle)
 
     def get_default_inputs(self):
+        # print(self.prev_throttle, self.prev_steer)
         return self.prev_throttle, self.prev_steer
 
     def opt_step(self, traj_11, traj_10, traj_2):
         N = 20
-        T = 1.5
+        T = 4
+        dt = T / N
         traj = np.zeros((N, 2))
         if traj_11 == 'constant':
-            u = [.2, 0.]
+            u = [1, 0.]
             traj[:, 0] = np.linspace(0, u[0] * 10, N)
             traj[:, 1] = np.linspace(0, u[1], N)
             self.C_hist[self.data_tick] = 0
             self.traj_12 = [self.start[1], 243]
             self.sn = [self.start[1], self.start[0]]
         else:
+            self.pre_solve_time = time.time()
             s, sn, u, c, traj_12 = mpc(hist=None, traj_11=traj_11, traj_10=traj_10,
-                                       traj_2=traj_2, tick=self.data_tick, goal=self.goal)
-            # print(len(u),len(u[0]))
-            # traj = np.zeros((u.shape[0],2))
-            # vel = u[0] * 10
-            # traj[:, 0] = np.linspace(vel, vel, N)
-            # traj[:, 1] = np.linspace(u[1], u[1], N)
-            traj[:, 0] = u[:, 0] * 10
-            traj[:, 1] = u[:, 1]
+                                       traj_2=traj_2, tick=self.data_tick, goal=self.goal,dt = dt, horizon = N,v0 = self.v,w0 =self.prev_steer)
+            delta_T = time.time() - self.pre_solve_time
+            # print(u)
+            T = T - delta_T
+            N = int(T/dt)
+            traj = u[-N:]
+            # print(T,'\n',traj)
+            if N <= 0:
+                self.mode = 0
+                return
+
+            # traj = np.zeros(u.shape)
+            # traj = u
+            # traj[:, 0] = u[:, 0]
+            # traj[:, 1] = u[:, 1]
             self.C_hist[self.data_tick] = c
             self.traj_12 = traj_12
             self.sn = sn
         super().set_follower_traj(traj, T)
         # super().step()
         # return traj
+abs

@@ -28,7 +28,7 @@ def intersection(s, u):
     return ds
 
 
-def scp_formpc(f, Q, R, Q_N, s_star, s0, N, dt, rho, UB, LB, aUB, vUB, omegaUB, Q_d, agent, hist):
+def scp_formpc(f, Q, R, Q_N, s_star, s0, N, dt, rho, UB, LB, aUB, vUB, omegaUB, Q_d, agent, hist, v0, w0):
     """Outer loop of scp"""
     n = 3  # state dimension, s = [x, y, theta, linear vel, angular vel]
     m = 2  # control dimension, u = [linear acc, angular acc]
@@ -43,7 +43,7 @@ def scp_formpc(f, Q, R, Q_N, s_star, s0, N, dt, rho, UB, LB, aUB, vUB, omegaUB, 
 
     # Compute new state and control via scp.
     s, u, c = scp_iteration_formpc(f, Q, R, Q_N, s_bar, u_bar, s_star, s0, N, dt, rho, UB, LB, aUB, vUB, omegaUB, Q_d,
-                                   agent, hist)
+                                   agent, hist, v0, w0)
     if u is None:
         if c is None:
             return None, None, 0
@@ -60,7 +60,7 @@ def scp_formpc(f, Q, R, Q_N, s_star, s0, N, dt, rho, UB, LB, aUB, vUB, omegaUB, 
         s_bar = s
         u_bar = u
         s, u, c = scp_iteration_formpc(f, Q, R, Q_N, s_bar, u_bar, s_star, s0, N, dt, rho, UB, LB, aUB, vUB, omegaUB,
-                                       Q_d, agent, hist)
+                                       Q_d, agent, hist, v0, w0)
         err = 0
         err = max(err, np.linalg.norm(u - u_bar, np.inf))
 
@@ -68,12 +68,14 @@ def scp_formpc(f, Q, R, Q_N, s_star, s0, N, dt, rho, UB, LB, aUB, vUB, omegaUB, 
 
 
 def scp_iteration_formpc(f, Q, R, Q_N, s_bar, u_bar, s_star, s0, N, dt, rho, UB, LB, aUB, vUB, omegaUB, Q_d, agent,
-                         hist):
+                         hist, v0, w0):
     """implement one iteration of scp"""
     s = cvx.Variable(s_bar.shape)
     u = cvx.Variable(u_bar.shape)
     cost_terms = []
     constraints = [s[0, :3] == s0]
+    constraints.append(u[0, 0] == v0)
+    constraints.append(u[0, 1] == w0)
     A, B, c = jax.vmap(linearize, in_axes=(None, 0, 0))(f, s_bar[:-1], u_bar)
     A, B, c = np.array(A), np.array(B), np.array(c)
     for k in range(N):
@@ -90,8 +92,14 @@ def scp_iteration_formpc(f, Q, R, Q_N, s_bar, u_bar, s_star, s0, N, dt, rho, UB,
             cost_terms.append(cvx.quad_form(s[k, :2] - s_push, Q_d))
             # cost_terms.append(cvx.quad_form(s[k, :2] - (hist[:2] + np.array([0, -3])), Q_d))
         cost_terms.append(cvx.quad_form(u[k], R))
-        constraints.append(u[k, 0] <= aUB)
-        constraints.append(u[k, 0] >= -aUB)
+        if k >= 1:
+            cost_terms.append(cvx.norm(u[k,0]-u[k-1,0])*100)
+            # constraints.append(u[k, 0] -u[k-1, 0]<= aUB/dt)
+            # constraints.append(u[k, 0] -u[k-1, 0]>= -aUB/dt)
+        # constraints.append(u[k, 0] <= aUB)
+        # constraints.append(u[k, 0] >= -aUB)
+        constraints.append(u[k, 0] <= vUB)
+        constraints.append(u[k, 0] >= -vUB)
         constraints.append(u[k, 1] <= omegaUB)
         constraints.append(u[k, 1] >= -omegaUB)
         # constraints.append(s[k, 3] >= 0)
@@ -162,13 +170,14 @@ def get_hist(filename):
     return hist
 
 
-def mpc(hist=None, traj_11=None, traj_10=None, traj_2=None, tick=None, goal=None):
+def mpc(hist=None, traj_11=None, traj_10=None, traj_2=None, tick=None, goal=None, dt = 0.1, horizon= 20, v0 = 0, w0 = 0):
     # simulation parameters
     n = 3
     m = 2
     agent = 1
-    dt = 0.1  # 0.01
-    horizon = 20  # 30
+    # print(v0,w0,"!!!!!!!!!!!")
+    # dt = 0.1  # 0.01
+    # horizon = 20  # 30
 
     # cost function
     Qf = np.diag(np.array([100, 100, 100]))  # , 0, 0])) # 1000.*np.eye(n)
@@ -182,8 +191,8 @@ def mpc(hist=None, traj_11=None, traj_10=None, traj_2=None, tick=None, goal=None
 
     # scp parameters
     UB, LB = None, None  # variables labeled as None are rebundant and will be removed later
-    aUB = .3  # acceleration upper bound
-    vUB = 5.  # velocity upper bound
+    aUB = 4.  # acceleration upper bound
+    vUB = 15.  # velocity upper bound
     omegaUB = np.pi / 17  # angular acceleration upper bound
     rho = None  # trust region constraint, currently not used to guarantee solvability
 
@@ -209,7 +218,7 @@ def mpc(hist=None, traj_11=None, traj_10=None, traj_2=None, tick=None, goal=None
         traj_1 = traj_11
     # print('start:', start_state, 'goal:', goal_state, 'traj_1:', traj_11, 'traj_target:', traj_1)
     s_mpc, u_mpc, c_mpc = scp_formpc(f_discrete, Q, R, Qf, goal_state, start_state,
-                                     horizon, dt, rho, UB, LB, aUB, vUB, omegaUB, Q_d, agent, traj_1)
+                                     horizon, dt, rho, UB, LB, aUB, vUB, omegaUB, Q_d, agent, traj_1, v0, w0)
     sn_mpc = s_mpc[-1, :2]
     '''
     if s_mpc is not None:

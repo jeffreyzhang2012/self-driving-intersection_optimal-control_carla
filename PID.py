@@ -11,6 +11,7 @@ class PID_base:
         self.cur_err = 0
         self.des = 0
         self.cum_err = 0
+        self.print_time = time.time()
 
     def set_des(self,des):
         self.des = des
@@ -23,13 +24,17 @@ class PID_base:
         if(self.cur_err * error) < 0: self.cur_err = 0
         self.cum_err += error
         out = self.Kp * error + self.Kd * (error - self.prev_error)/dt + self.Ki*self.cum_err*dt
+        if cur_time - self.print_time > 0.1:
+            # print(self.des,value,error)
+            self.print_time = cur_time
         return out
 
 class vwFollower:
     def __init__(self,vehicle):
-        self.v_PID = PID_base([0.2,0,0])
+        self.v_PID = PID_base([0.5,0,.0])
         self.v_des = 0
         self.w_des = 0
+        # self.print_time = time.time()
         self.vehicle = vehicle
 
     def new_goal(self,goal):
