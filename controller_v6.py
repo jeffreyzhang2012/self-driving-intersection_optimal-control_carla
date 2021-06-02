@@ -129,6 +129,8 @@ class Controller:
         self.update_state()
         if self.mode == 1:
             throttle, steer = self.get_input()
+            self.prev_throttle = throttle
+            self.prev_steer = steer
             # self.get_input()
         else:
             throttle, steer = self.get_default_inputs()
@@ -225,7 +227,7 @@ class CurveFollowController(Controller):
 
     def calculate_control(self, traj_1, traj_2):
         u = mpc(hist=None, traj_1=traj_1, traj_2=traj_2, tick=self.data_tick, goal=self.goal)
-        print('u=', u)
+        # print('u=', u)
         if u[0] >= 0:
             return [u[0], u[1], 0.]
         else:
@@ -247,14 +249,16 @@ class vwController(Controller):
         self.start = [255, -183]
         self.goal = np.array([269, -169])
         self.follower = vwFollower(vehicle)
+        self.prev_throttle = 0
+        self.prev_steer = 0
         super().__init__(vehicle)
 
     def get_default_inputs(self):
-        return 0.0, 0.0
+        return self.prev_throttle, self.prev_steer
 
     def opt_step(self, traj_11, traj_10, traj_2):
         N = 20
-        T = 1
+        T = 1.5
         traj = np.zeros((N, 2))
         if traj_11 == 'constant':
             u = [.2, 0.]
@@ -266,7 +270,7 @@ class vwController(Controller):
         else:
             s, sn, u, c, traj_12 = mpc(hist=None, traj_11=traj_11, traj_10=traj_10,
                                        traj_2=traj_2, tick=self.data_tick, goal=self.goal)
-            print(len(u),len(u[0]))
+            # print(len(u),len(u[0]))
             # traj = np.zeros((u.shape[0],2))
             # vel = u[0] * 10
             # traj[:, 0] = np.linspace(vel, vel, N)

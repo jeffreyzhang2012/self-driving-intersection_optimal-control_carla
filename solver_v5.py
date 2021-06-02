@@ -108,7 +108,7 @@ def scp_iteration_formpc(f, Q, R, Q_N, s_bar, u_bar, s_star, s0, N, dt, rho, UB,
         # constraints.append(cvx.sum(unit_vec @ (hist + np.array([0, 3.]) - s[N, :2])) >= 8)
         # cost_terms.append(1000 - 50 * cvx.sum(unit_vec @ (hist + np.array([0, 3.]) - s[N, :2])))
         s_push = hist - unit_vec * 20
-        print('push=', s_push)
+        # print('push=', s_push)
         cost_terms.append(cvx.quad_form(s[N, :2] - s_push, Q_d))
     # if np.linalg.norm(hist - s_bar[N, :2]) > 0:
     #     print('unit_vec=', unit_vec @ (hist - s[N, :2]))
@@ -207,7 +207,7 @@ def mpc(hist=None, traj_11=None, traj_10=None, traj_2=None, tick=None, goal=None
             traj_1 = traj_11
     else:
         traj_1 = traj_11
-    print('start:', start_state, 'goal:', goal_state, 'traj_1:', traj_11, 'traj_target:', traj_1)
+    # print('start:', start_state, 'goal:', goal_state, 'traj_1:', traj_11, 'traj_target:', traj_1)
     s_mpc, u_mpc, c_mpc = scp_formpc(f_discrete, Q, R, Qf, goal_state, start_state,
                                      horizon, dt, rho, UB, LB, aUB, vUB, omegaUB, Q_d, agent, traj_1)
     sn_mpc = s_mpc[-1, :2]

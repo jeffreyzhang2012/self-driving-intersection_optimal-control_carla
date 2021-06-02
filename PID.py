@@ -27,7 +27,7 @@ class PID_base:
 
 class vwFollower:
     def __init__(self,vehicle):
-        self.v_PID = PID_base([0.1,0,0])
+        self.v_PID = PID_base([0.2,0,0])
         self.v_des = 0
         self.w_des = 0
         self.vehicle = vehicle
